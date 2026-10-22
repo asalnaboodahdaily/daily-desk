@@ -211,11 +211,6 @@ img.thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;backg
   <section class="panel" id="secGadgets"></section>
   <section class="panel" id="secEvents"></section>
   <section class="panel" id="secStatus"></section>
-  <div class="row2">
-    <section class="panel" id="secDFM"></section>
-    <section class="panel" id="secADX"></section>
-  </div>
-  <section class="panel" id="secStocks"></section>
   <footer id="foot"></footer>
 </main>
 
@@ -453,22 +448,13 @@ function renderEvents(){const E=state.feeds.events;const T=t();const el=$('#secE
 function nextRunText(){ // 09:00 & 21:00 Asia/Dubai (UTC+4)
  const now=new Date();for(let i=0;i<3;i++){const d=new Date(now.getTime()+i*86400000);const p=Object.fromEntries(new Intl.DateTimeFormat('en-u-nu-latn',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).map(x=>[x.type,x.value]));
   for(const h of [9,21]){const cand=new Date(Date.UTC(+p.year,+p.month-1,+p.day,h-4,0));if(cand>now)return cand}}return null}
-function renderStatus(){const T=t();const F=state.feeds;const names={news:T.world,science:T.disc+' / '+T.inv,watchlist:T.watch,rankings:T.cam,gadgets:T.gadgets,radar:T.radar,device_news:T.devnews,events:T.events,ios:T.iosTitle,markets:T.markets,gold_fx:T.gold+' / '+T.fxTitle,weather:T.weather,announcements:T.ann};
+function renderStatus(){const T=t();const F=state.feeds;const names={news:T.world,science:T.disc+' / '+T.inv,watchlist:T.watch,rankings:T.cam,gadgets:T.gadgets,radar:T.radar,device_news:T.devnews,events:T.events,ios:T.iosTitle,gold_fx:T.gold+' / '+T.fxTitle,weather:T.weather,announcements:T.ann};
  const nr=nextRunText();const jobs=F.jobs&&F.jobs.runs||[];
  const cards=Object.keys(names).map(k=>{const d=F[k];const age=d&&d.updated_at?(Date.now()-new Date(d.updated_at))/3600000:null;const cls=age==null?'off':age>26?'stale':'';
   return `<div class="card"><b><span class="dot ${cls}"></span>${esc(names[k])}</b>${d?`${esc(T.lastOk)}: <bdi title="${esc(timeTitle(d.updated_at))}">${esc(rel(d.updated_at))}</bdi>${d.provider?`<br>${esc(T.provider)}: <bdi>${esc(d.provider)}</bdi>`:''}`:esc(T.unavailable)}</div>`}).join('');
  $('#secStatus').innerHTML=head(T.status,ICON.sec.db,`<bdi>${esc(T.statusLine)}</bdi>`)+`<p class="pnote">${esc(T.lastCheck)}: <bdi>${state.lastCheck?esc(fmtDate(state.lastCheck.toISOString(),{timeStyle:'short'})):'—'}</bdi> · ${esc(T.nextRun)}: <bdi>${nr?esc(fmtDate(nr.toISOString(),{weekday:'short',hour:'2-digit',minute:'2-digit'})):'—'}</bdi> · ${esc(T.noPromise)}${state.fromBackup?` · ${esc(T.backupShown)}`:''}</p><div class="status-grid">${cards}</div>`+
  (jobs.length?`<details><summary>job_runs</summary>${jobs.slice(0,8).map(j=>`<div><bdi class="num">${esc(fmtDate(j.finished_at||j.started_at,{dateStyle:'short',timeStyle:'short'}))}</bdi> · <bdi>${esc(j.job)}</bdi> · <span class="chip ${j.status==='ok'?'ok':'red'}">${esc(j.status)}</span> ${j.note?`<bdi>${esc(j.note)}</bdi>`:''}</div>`).join('')}</details>`:'')}
-function idxCard(title,ix,M){const T=t();if(!M)return head(title,ICON.sec.pulse)+skeleton(4);if(!ix)return head(title,ICON.sec.pulse,updatedMeta(M))+empty();const ch=typeof ix.change_pct==='number'?ix.change_pct:null;
- return head(title,ICON.sec.pulse,updatedMeta(M))+`<div class="big">${typeof ix.value==='number'?ix.value.toLocaleString('en',{maximumFractionDigits:2}):'—'} ${ch!=null?`<span class="${ch>=0?'up':'down'}" style="font-size:.6em">${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(2)}%</span>`:''}</div>
- <dl class="kv"><dt>${esc(T.turnover)}</dt><dd><bdi class="num">${typeof ix.turnover_aed==='number'?ix.turnover_aed.toLocaleString('en',{maximumFractionDigits:0}):'—'}</bdi></dd><dt>${esc(T.session)}</dt><dd>${esc(L(M,'session'))}</dd><dt>${esc(T.asOf)}</dt><dd><bdi>${esc(fmtDate(ix.as_of||M.as_of,{dateStyle:'medium',timeStyle:'short'}))}</bdi></dd><dt>${esc(T.provider)}</dt><dd><bdi>${esc(M.provider||'—')}</bdi></dd></dl>
- <div style="margin-top:.4rem"><span class="chip ${M.data_type==='live'?'ok':M.data_type==='stale'?'exp':'info'}">${esc(T.dtype[M.data_type]||M.data_type||'')}</span></div>`}
-function renderMarkets(){const M=state.feeds.markets;const T=t();$('#secDFM').innerHTML=idxCard(T.dfm,M&&M.dfm,M);$('#secADX').innerHTML=idxCard(T.adx,M&&M.adx,M);
- const el=$('#secStocks');const rows=M&&M.stocks?M.stocks.filter(s=>state.stockFilter==='all'||s.exchange===state.stockFilter):null;
- el.innerHTML=head(T.stocks,ICON.sec.pulse,updatedMeta(M))+`<div class="filters" role="tablist">${['all','DFM','ADX'].map(f=>`<button class="tab" role="tab" data-f="${f}" aria-selected="${state.stockFilter===f}">${f==='all'?esc(T.all):f}</button>`).join('')}</div>`+
- (rows?(rows.length?`<div class="tablewrap"><table><thead><tr><th>${esc(T.company)}</th><th class="num">${esc(T.price)}</th><th class="num">${esc(T.chg)}</th><th class="num">${esc(T.turnover)}</th><th>${esc(T.time)}</th></tr></thead><tbody>${rows.map(s=>{const ch=typeof s.change_pct==='number'?s.change_pct:null;return `<tr><td><bdi>${esc(L(s,'name'))}</bdi><br><small class="num" style="color:var(--fg2)">${esc(s.symbol)} · ${esc(s.exchange)}</small></td><td class="num">${typeof s.price==='number'?s.price.toFixed(2):'—'}</td><td class="num ${ch==null?'':ch>=0?'up':'down'}">${ch==null?'—':`${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(2)}%`}</td><td class="num">${typeof s.turnover_aed==='number'?s.turnover_aed.toLocaleString('en',{maximumFractionDigits:0}):'—'}</td><td><small><bdi>${esc(fmtDate(s.as_of,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))}</bdi> · <span class="chip ${s.status==='stale'?'exp':'info'}">${esc(T.dtype[s.status]||s.status||'')}</span></small></td></tr>`}).join('')}</tbody></table></div>`:empty()):skeleton(7));
- el.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{state.stockFilter=b.dataset.f;renderMarkets()}))}
-function renderAll(){renderDate();renderStrip();renderNews();renderScience();renderWatch();renderRank();renderRadar();renderGadgets();renderEvents();renderStatus();renderMarkets();$('#foot').textContent=t().footer;$('#banner').classList.toggle('show',!navigator.onLine);if(!navigator.onLine)$('#banner').textContent=t().offline;
+function renderAll(){renderDate();renderStrip();renderNews();renderScience();renderWatch();renderRank();renderRadar();renderGadgets();renderEvents();renderStatus();$('#foot').textContent=t().footer;$('#banner').classList.toggle('show',!navigator.onLine);if(!navigator.onLine)$('#banner').textContent=t().offline;
  document.title=state.lang==='ar'?'لوحتي اليومية · Daily Desk':'Daily Desk · لوحتي اليومية'}
 /* ========== modals ========== */
 function openModal(title,html,opener){state.opener=opener||document.activeElement;$('#mTitle').textContent=title;$('#mBody').innerHTML=html;$('#modal').classList.add('open');document.body.style.overflow='hidden';setTimeout(()=>$('#mClose').focus(),0)}
@@ -509,7 +495,7 @@ $('#btnSize').addEventListener('click',()=>{const o=['normal','large','larger','
 $('#btnTheme').addEventListener('click',()=>{const dark=$('#btnTheme').getAttribute('aria-pressed')==='true';state.theme=dark?'light':'dark';ls.set('dd.theme',state.theme);applyPrefs()});
 $('#btnRefresh').addEventListener('click',()=>refresh(true));
 /* ========== data ========== */
-const FEEDS=['news','science','watchlist','announcements','rankings','gadgets','radar','device_news','events','ios','markets','gold_fx','weather','jobs'];
+const FEEDS=['news','science','watchlist','announcements','rankings','gadgets','radar','device_news','events','ios','gold_fx','weather','jobs'];
 function loadBackup(){try{const raw=localStorage.getItem('dd.backup');if(!raw)return;const b=JSON.parse(raw);if(b&&b.feeds){state.feeds=b.feeds;state.fromBackup=true}}catch(e){}}
 function saveBackup(){ls.set('dd.backup',JSON.stringify({saved_at:new Date().toISOString(),feeds:state.feeds}))}
 let refreshing=false;
@@ -529,7 +515,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopTimers(
 addEventListener('online',()=>{renderAll();refresh(false)});addEventListener('offline',renderAll);
 /* ========== boot ========== */
 (function boot(){state.lang=ls.get('dd.lang')||'ar';state.size=ls.get('dd.size')||'large';state.theme=ls.get('dd.theme')||'';state.gadgetTab=ls.get('dd.tab')||'month';
- const h=location.hash.replace('#','');if(['gadgets','events','markets','stocks','watch'].includes(h))setTimeout(()=>{const m={gadgets:'#secGadgets',events:'#secEvents',markets:'#secDFM',stocks:'#secStocks',watch:'#secWatch'};$(m[h])?.scrollIntoView()},300);
+ const h=location.hash.replace('#','');if(['gadgets','events','watch'].includes(h))setTimeout(()=>{const m={gadgets:'#secGadgets',events:'#secEvents',watch:'#secWatch'};$(m[h])?.scrollIntoView()},300);
  loadBackup();applyPrefs();renderAll();connect();startTimers()})();
 </script>
 
