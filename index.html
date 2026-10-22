@@ -81,7 +81,10 @@ button{font:inherit;color:inherit}
 /* panels and cards */
 main{display:grid;gap:1rem;padding-top:1rem}
 .row2{display:grid;gap:1rem;grid-template-columns:1fr}
-@media(min-width:900px){.row2{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.row2{grid-template-columns:1fr 1fr;align-items:start}}
+.pack{display:grid;gap:1rem;grid-template-columns:1fr}.pack .col{display:grid;gap:1rem;align-content:start;min-width:0}.pack .col:empty{display:none}
+@media(min-width:900px){.pack{grid-template-columns:1fr 1fr}.pack .col:empty{display:block}}
+.cards.cols2>.card.wide{grid-column:1/-1}
 .panel{background:linear-gradient(180deg,var(--card-top),var(--card-bot));border:1px solid var(--line);border-radius:var(--r-panel);box-shadow:var(--shadow);padding:1rem 1.1rem;min-width:0;
   transition:transform .18s ease,box-shadow .18s ease}
 @media(hover:hover) and (prefers-reduced-motion:no-preference){.panel:hover{transform:translateY(-2px)} .card:hover{transform:translateY(-1px)}}
@@ -92,7 +95,7 @@ main{display:grid;gap:1rem;padding-top:1rem}
 .pnote{font-size:.74rem;color:var(--fg2);margin:0 0 .5rem}
 .card{background:linear-gradient(180deg,var(--card-inner),var(--card-inner-2));border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-inner);padding:.7rem .8rem;min-width:0;transition:transform .15s ease}
 .cards{display:grid;gap:.6rem}
-.cols3{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.cols3{grid-template-columns:1fr}@media(min-width:600px){.cols3{grid-template-columns:1fr 1fr}}@media(min-width:1000px){.cols3{grid-template-columns:1fr 1fr 1fr}}
 .cols2{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 /* strip */
 .strip{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
@@ -200,14 +203,12 @@ img.thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;backg
     <section class="panel" id="secInv"></section>
   </div>
   <section class="panel" id="secWatch"></section>
-  <div class="row2">
+  <div class="pack" id="pack"><div class="col" id="packA">
     <section class="panel" id="secCam"></section>
     <section class="panel" id="secPerf"></section>
-  </div>
-  <div class="row2">
     <section class="panel" id="secRadar"></section>
     <section class="panel" id="secDevNews"></section>
-  </div>
+  </div><div class="col" id="packB"></div></div>
   <section class="panel" id="secGadgets"></section>
   <section class="panel" id="secEvents"></section>
   <section class="panel" id="secStatus"></section>
@@ -377,7 +378,7 @@ function renderStrip(){const T=t();const g=state.feeds.gold_fx;const w=state.fee
  // gold
  let gv='—',gs='',arrow='';if(gold&&typeof gold.usd_per_oz==='number'){gv=`$${gold.usd_per_oz.toLocaleString('en',{maximumFractionDigits:0})}`;if(typeof gold.prev_usd_per_oz==='number'&&gold.prev_usd_per_oz>0){const ch=(gold.usd_per_oz-gold.prev_usd_per_oz)/gold.prev_usd_per_oz*100;arrow=`<span class="${ch>=0?'up':'down'} num">${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(2)}%</span>`}gs=`${esc(T.dtype[gold.status]||gold.status||'')} · ${esc(rel(gold.as_of))}`}else gs=T.unavailable;
  tiles.push(`<button class="tile gold" data-modal="gold"><span class="lbl">${ICON.gold}${esc(T.gold)} · ${esc(T.perOz)}</span><span class="val num">${gv} ${arrow}</span><span class="sub">${gs}</span></button>`);
- for(const c of ['THB','GBP','EUR']){let v='—',s=T.unavailable;if(fx&&fx.rates&&typeof fx.rates[c]==='number'){v=(1000*fx.rates[c]).toLocaleString('en',{maximumFractionDigits:c==='THB'?0:2});s=`${esc(T.dtype.reference)} · ${esc(fmtDate(fx.as_of,{day:'numeric',month:'short'}))}`}
+ for(const c of ['GBP','EUR']){let v='—',s=T.unavailable;if(fx&&fx.rates&&typeof fx.rates[c]==='number'){v=(1000*fx.rates[c]).toLocaleString('en',{maximumFractionDigits:c==='THB'?0:2});s=`${esc(T.dtype.reference)} · ${esc(fmtDate(fx.as_of,{day:'numeric',month:'short'}))}`}
   tiles.push(`<button class="tile" data-modal="fx" data-cur="${c}"><span class="lbl">${ICON.fx}${esc(T.aedK)} → ${c}</span><span class="val num">${v} <small style="font-size:.6em;font-weight:600">${c}</small></span><span class="sub">${s}</span></button>`)}
  // ios/fold
  let iv='—',isub='';if(ios){iv=`iOS ${esc(ios.stable_version||'—')}`;const cdn=countdown({date:ios.next_date,date_precision:ios.next_date_precision,status:'official'});const cdf=countdown({date:ios.fold_date,date_precision:ios.fold_date_precision,status:ios.fold_status_key||'expected'});
@@ -394,8 +395,8 @@ const wxIcon=(code)=>{const c=+code;const k=c===0?0:c<=2?2:c===3?3:c<=49?45:c>=9
 function renderNews(){const N=state.feeds.news;const items=N&&N.items;const by=(c)=>items?items.filter(x=>x.category===c).sort((a,b)=>(a.rank||99)-(b.rank||99)):null;const T=t();
  $('#secWorld').innerHTML=head(T.world,ICON.sec.news,updatedMeta(N),T.editorial)+newsList(by('world'));
  $('#secTech').innerHTML=head(T.tech,ICON.sec.chip,updatedMeta(N),T.editorial)+newsList(by('tech'));
- const cats=[['uae','uae'],['gulf','gulf'],['world_brief','globe'],['health','health'],['sport','sport']];
- $('#secBrief').innerHTML=head(T.brief,ICON.sec.grid,updatedMeta(N))+`<div class="cards cols2">${cats.map(([c,ic])=>{const l=by(c);return `<div class="card"><div class="phead" style="margin-bottom:.3rem"><h2 style="font-size:1rem">${ICON.sec[ic]}<span>${esc(T.cats[c])}</span></h2><span class="meta">${l?esc(T.count(l.length)):''}</span></div>${newsList(l)}</div>`}).join('')}</div>`}
+ const cats=[['uae','uae'],['gulf','gulf'],['world_brief','globe'],['sport','sport'],['health','health']];
+ $('#secBrief').innerHTML=head(T.brief,ICON.sec.grid,updatedMeta(N))+`<div class="cards cols2">${cats.map(([c,ic])=>{const l=by(c);return `<div class="card ${c==='health'?'wide':''}"><div class="phead" style="margin-bottom:.3rem"><h2 style="font-size:1rem">${ICON.sec[ic]}<span>${esc(T.cats[c])}</span></h2><span class="meta">${l?esc(T.count(l.length)):''}</span></div>${newsList(l)}</div>`}).join('')}</div>`}
 function sciList(items,cls){if(!items)return skeleton();if(!items.length)return empty();const T=t();
  return `<ol class="news">${items.map((it,i)=>`<li><span class="n ${cls}">${it.rank??i+1}</span><div style="min-width:0"><div class="t">${link(it.url,`<bdi>${esc(L(it,'title'))}</bdi>`)}</div>${L(it,'summary')?`<div class="s">${esc(L(it,'summary'))}</div>`:''}
  <div class="m"><span class="chip ${cls==='g'?'ok':'info'}">${esc(T.maturity[it.maturity]||'')}</span><bdi>${esc(it.org||'')}</bdi><span>·</span><bdi>${esc(fmtDate(it.published_at,{day:'numeric',month:'short',year:'numeric'}))}</bdi></div></div></li>`).join('')}</ol>`}
@@ -416,7 +417,7 @@ function rankList(items,sub){if(!items)return skeleton();if(!items.length)return
  ${sub&&(r.daily!=null||r.intensive!=null||r.battery!=null)?`<span style="flex-basis:100%"></span>${r.daily!=null?`<span class="chip">${esc(T.daily)} <bdi class="num">${r.daily}</bdi></span>`:''}${r.intensive!=null?`<span class="chip">${esc(T.intensive)} <bdi class="num">${r.intensive}</bdi></span>`:''}${r.battery!=null?`<span class="chip">${esc(T.battery)} <bdi class="num">${r.battery}</bdi></span>`:''}`:''}</div></div>
  <span class="score" style="${r.rank===1?'color:var(--gold)':''}">${r.score??'—'}</span></div>`).join('')}</div>`}
 function renderRank(){const R=state.feeds.rankings;const T=t();
- const meta=(src)=>R?`${updatedMeta(R)}${src?` · ${esc(src)}`:''}`:'';
+ const host=(u)=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return u||''}};const meta=(src)=>R?`${updatedMeta(R)}${src?` · ${esc(host(src))}`:''}`:'';
  $('#secCam').innerHTML=head(T.cam,ICON.sec.cam,meta(R&&R.camera_source))+rankList(R&&R.camera)+(R?`<details><summary>${esc(T.method)}</summary><p>${esc(L(R,'camera_method'))}</p></details>`:'');
  $('#secPerf').innerHTML=head(T.perf,ICON.sec.chip,meta(R&&R.overall_source))+rankList(R&&R.overall,true)+(R?`<details><summary>${esc(T.method)}</summary><p>${esc(L(R,'overall_method'))}</p></details>`:'')}
 function renderRadar(){const Rd=state.feeds.radar;const D=state.feeds.device_news;const T=t();
@@ -454,7 +455,12 @@ function renderStatus(){const T=t();const F=state.feeds;const names={news:T.worl
   return `<div class="card"><b><span class="dot ${cls}"></span>${esc(names[k])}</b>${d?`${esc(T.lastOk)}: <bdi title="${esc(timeTitle(d.updated_at))}">${esc(rel(d.updated_at))}</bdi>${d.provider?`<br>${esc(T.provider)}: <bdi>${esc(d.provider)}</bdi>`:''}`:esc(T.unavailable)}</div>`}).join('');
  $('#secStatus').innerHTML=head(T.status,ICON.sec.db,`<bdi>${esc(T.statusLine)}</bdi>`)+`<p class="pnote">${esc(T.lastCheck)}: <bdi>${state.lastCheck?esc(fmtDate(state.lastCheck.toISOString(),{timeStyle:'short'})):'—'}</bdi> · ${esc(T.nextRun)}: <bdi>${nr?esc(fmtDate(nr.toISOString(),{weekday:'short',hour:'2-digit',minute:'2-digit'})):'—'}</bdi> · ${esc(T.noPromise)}${state.fromBackup?` · ${esc(T.backupShown)}`:''}</p><div class="status-grid">${cards}</div>`+
  (jobs.length?`<details><summary>job_runs</summary>${jobs.slice(0,8).map(j=>`<div><bdi class="num">${esc(fmtDate(j.finished_at||j.started_at,{dateStyle:'short',timeStyle:'short'}))}</bdi> · <bdi>${esc(j.job)}</bdi> · <span class="chip ${j.status==='ok'?'ok':'red'}">${esc(j.status)}</span> ${j.note?`<bdi>${esc(j.note)}</bdi>`:''}</div>`).join('')}</details>`:'')}
-function renderAll(){renderDate();renderStrip();renderNews();renderScience();renderWatch();renderRank();renderRadar();renderGadgets();renderEvents();renderStatus();$('#foot').textContent=t().footer;$('#banner').classList.toggle('show',!navigator.onLine);if(!navigator.onLine)$('#banner').textContent=t().offline;
+function pack(){const A=$('#packA'),B=$('#packB');if(!A||!B)return;const secs=['#secCam','#secPerf','#secRadar','#secDevNews'].map(q=>$(q)).filter(Boolean);
+ if(innerWidth<900){secs.forEach(el=>A.appendChild(el));return}
+ secs.forEach(el=>A.appendChild(el));const hs=secs.map(el=>el.offsetHeight);let ha=0,hb=0;const gap=16;
+ secs.forEach((el,i)=>{if(hb+hs[i]<ha){B.appendChild(el);hb+=hs[i]+gap}else{A.appendChild(el);ha+=hs[i]+gap}})}
+let packT=null;addEventListener('resize',()=>{clearTimeout(packT);packT=setTimeout(pack,150)});
+function renderAll(){renderDate();renderStrip();renderNews();renderScience();renderWatch();renderRank();renderRadar();renderGadgets();renderEvents();renderStatus();pack();$('#foot').textContent=t().footer;$('#banner').classList.toggle('show',!navigator.onLine);if(!navigator.onLine)$('#banner').textContent=t().offline;
  document.title=state.lang==='ar'?'لوحتي اليومية · Daily Desk':'Daily Desk · لوحتي اليومية'}
 /* ========== modals ========== */
 function openModal(title,html,opener){state.opener=opener||document.activeElement;$('#mTitle').textContent=title;$('#mBody').innerHTML=html;$('#modal').classList.add('open');document.body.style.overflow='hidden';setTimeout(()=>$('#mClose').focus(),0)}
